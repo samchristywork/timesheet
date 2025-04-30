@@ -63,7 +63,7 @@ list() {
     }'
 }
 
-bar() {
+stausbar() {
   last_timestamp=$(tail -n 1 "$filename" | awk -F'\t' '{print $1}')
   now=$(date +%s)
   duration=$((now - last_timestamp))
@@ -82,6 +82,44 @@ interactive() {
   if [ -n "$activity" ]; then
     add_activity "$activity"
   fi
+}
+
+categories_short() {
+  process_file | awk -F'\t' '
+  {
+    activity = $1
+    current_category = split(activity, parts, ".") > 0 ? parts[1] : "Uncategorized"
+    duration = $2
+    categories[current_category] += duration
+  }
+  function print_category(category) {
+      printf category "	"
+
+      if (category == current_category) {
+        printf ">"
+      }
+
+      duration = categories[category]
+      hours = duration / 3600
+      minutes = (duration % 3600) / 60
+      seconds = duration % 60
+      printf "%02d:%02d", hours, minutes
+      #printf "%02d:%02d:%02d", hours, minutes, seconds
+      print ""
+  }
+  END {
+    min_duration = categories["sleep"]
+    for (category in categories) {
+      if (categories[category] < min_duration) {
+        min_duration = categories[category]
+      }
+    }
+
+    for (category in categories) {
+      categories[category] -= min_duration
+      print_category(category)
+    }
+  }' | sort | cut -f2 -d"	" | tr '\n' ' '
 }
 
 categories() {
