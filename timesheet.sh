@@ -63,6 +63,17 @@ list() {
     }'
 }
 
+bar() {
+  last_timestamp=$(tail -n 1 "$filename" | awk -F'\t' '{print $1}')
+  now=$(date +%s)
+  duration=$((now - last_timestamp))
+  tail -n 1 "$filename" | awk -F'\t' '{print $3}' | tr -d '\n'
+  hours=$(($duration / 3600))
+  minutes=$(($duration % 3600 / 60))
+  seconds=$(($duration % 60))
+  printf " %02d:%02d:%02d" $hours $minutes $seconds
+}
+
 interactive() {
   activity=$({
     tail -n 1 "$filename" | awk -F'\t' '{print $3}'
@@ -71,6 +82,26 @@ interactive() {
   if [ -n "$activity" ]; then
     add_activity "$activity"
   fi
+}
+
+categories() {
+  process_file | awk -F'\t' '
+  {
+    activity = $1
+    category = split(activity, parts, ".") > 0 ? parts[1] : "Uncategorized"
+    duration = $2
+    categories[category] += duration
+  }
+  END {
+    printf "Time     Category\n"
+    for (category in categories) {
+      duration = categories[category]
+      hours = duration / 3600
+      minutes = (duration % 3600) / 60
+      seconds = duration % 60
+      printf "%02d:%02d:%02d %s\n", hours, minutes, seconds, category
+    }
+  }'
 }
 
 case "$cmd" in
