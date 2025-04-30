@@ -63,7 +63,7 @@ list() {
     }'
 }
 
-stausbar() {
+statusbar() {
   last_timestamp=$(tail -n 1 "$filename" | awk -F'\t' '{print $1}')
   now=$(date +%s)
   duration=$((now - last_timestamp))
@@ -143,15 +143,51 @@ categories() {
 }
 
 case "$cmd" in
+  "activities")
+    list_activities
+    ;;
   "add")
     activity="$2"
     add_activity "$activity"
+    ;;
+  "statusbar")
+    statusbar
+    ;;
+  "categories")
+    categories
+    ;;
+  "categories-short")
+    categories_short
+    ;;
+  "current-activity")
+    tail -n 1 "$filename" | awk -F'\t' '{print $3}'
+    ;;
+  "data")
+    process_file
+    ;;
+  "edit")
+    $EDITOR "$filename"
+    ;;
+  "list")
+    process_file | list
+    ;;
+  "select")
+    interactive
     ;;
   *)
     echo "Usage: $0 <command>"
     echo
     echo "Commands:"
+    echo "  activities        List all unique activities"
     echo "  add <activity>    Add a new activity"
+    echo "  statusbar         Show the time spent on the current activity"
+    echo "  categories        Show time spent in categories"
+    echo "  categories-short  Show time spent in categories (short format)"
+    echo "  current-activity  Show the current activity"
+    echo "  data              Show raw data"
+    echo "  edit              Edit the timesheet file"
+    echo "  list              Show time spent on each activity"
+    echo "  select            Select an activity from a list"
     exit 1
     ;;
 esac
